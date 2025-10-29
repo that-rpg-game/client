@@ -146,7 +146,7 @@ class WorldDiscovery {
     }
 
     // Add port if provided and not already in URL
-    if (world.port && !url.includes(':',url.indexOf('//') + 2)) {
+    if (world.port && !url.includes(':', url.indexOf('//') + 2)) {
       url = `${url}:${world.port}`;
     }
 

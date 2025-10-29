@@ -290,7 +290,7 @@ class WorldSelectScene extends Phaser.Scene {
       this.time.delayedCall(1000, () => {
         this.scene.start('WorldScene', {
           worldInfo: selectedWorld,
-          playerData: playerData
+          playerData: playerData,
         });
       });
     } catch (error) {
@@ -340,10 +340,12 @@ class WorldScene extends Phaser.Scene {
     // Create world with visible grid
     this.createWorld();
 
-    this.add.text(10, 10, 'Use arrow keys to move', {
-      font: '16px monospace',
-      fill: '#ffffff',
-    }).setScrollFactor(0); // Fixed to camera
+    this.add
+      .text(10, 10, 'Use arrow keys to move', {
+        font: '16px monospace',
+        fill: '#ffffff',
+      })
+      .setScrollFactor(0); // Fixed to camera
 
     // Set up network event listeners
     this.setupNetworkHandlers();
