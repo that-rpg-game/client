@@ -1,0 +1,87 @@
+{
+  "name": "rpg-game-client",
+  "version": "0.1.0",
+  "description": "Open-source game client for a fantasy MMORPG",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --dir",
+    "package": "electron-builder --publish never",
+    "package:all": "electron-builder -mwl --publish never",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --coverageReporters=text --coverageReporters=html --coverageReporters=lcov",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"tests/**/*.js\""
+  },
+  "keywords": [
+    "mmorpg",
+    "game-client",
+    "electron",
+    "phaser"
+  ],
+  "author": "that-rpg-game",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/that-rpg-game/client.git"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "electron-updater": "^6.1.4",
+    "phaser": "^3.70.0",
+    "redis": "^4.6.10",
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^24.6.4",
+    "eslint": "^8.53.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.6.2"
+  },
+  "build": {
+    "appId": "com.that-rpg-game.client",
+    "productName": "RPG Game",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Game"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "that-rpg-game",
+      "repo": "client"
+    }
+  }
+}
