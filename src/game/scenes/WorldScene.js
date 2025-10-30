@@ -25,6 +25,18 @@ class WorldScene extends Phaser.Scene {
     connection.on('chat:message', this.handlers.handleChatMessage.bind(this.handlers));
     connection.on('error', this.handlers.handleError.bind(this.handlers));
 
+    // Handle authSuccess to add local player
+    connection.on('authSuccess', (data) => {
+      console.warn('Auth success, spawning local player:', data);
+      this.addPlayer({
+        playerId: data.playerId,
+        displayName: data.displayName,
+        x: data.position.x,
+        y: data.position.y,
+        isLocal: true,
+      });
+    });
+
     // Set up input handling
     this.cursors = this.input.keyboard.createCursorKeys();
 

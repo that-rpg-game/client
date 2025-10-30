@@ -11,7 +11,15 @@ class MessageHandlers {
     console.warn('Player joined:', data.playerId);
     // Add player to game world
     if (this.gameScene) {
-      this.gameScene.addPlayer(data);
+      // Map server data format to client format
+      const playerData = {
+        playerId: data.playerId,
+        displayName: data.displayName,
+        x: data.x,
+        y: data.y,
+        isLocal: false,
+      };
+      this.gameScene.addPlayer(playerData);
     }
   }
 

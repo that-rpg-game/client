@@ -8,11 +8,13 @@ class ConnectionManager {
   }
 
   connect(serverUrl, token) {
+    console.warn('Attempting to connect to:', serverUrl);
     return new Promise((resolve, reject) => {
       this.socket = io(serverUrl, {
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5,
+        transports: ['websocket', 'polling'], // Try websocket first, fall back to polling
       });
 
       this.socket.on('connect', () => {

@@ -398,12 +398,12 @@ class WorldScene extends Phaser.Scene {
     });
 
     // Listen for other players spawning
-    connection.on('playerSpawned', (data) => {
+    connection.on('player:joined', (data) => {
       this.spawnOtherPlayer(data);
     });
 
     // Listen for other players despawning
-    connection.on('playerDespawned', (data) => {
+    connection.on('player:left', (data) => {
       this.despawnPlayer(data.playerId);
     });
   }
@@ -443,7 +443,7 @@ class WorldScene extends Phaser.Scene {
 
     // Create other player sprite
     const player = this.add.circle(x, y, 16, 0xe74c3c);
-    player.playerId = data.playerId || data.userId;
+    player.playerId = data.playerId;
     player.displayName = data.displayName || data.username;
     player.tileX = tileX;
     player.tileY = tileY;
