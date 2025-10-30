@@ -64,13 +64,13 @@ class ConnectionManager {
     this.handlers.set(eventName, handler);
 
     // Process any buffered events for this handler
-    const bufferedEvents = this.eventBuffer.filter(e => e.eventName === eventName);
+    const bufferedEvents = this.eventBuffer.filter((e) => e.eventName === eventName);
     if (bufferedEvents.length > 0) {
-      bufferedEvents.forEach(event => {
+      bufferedEvents.forEach((event) => {
         handler(...event.args);
       });
       // Remove processed events from buffer
-      this.eventBuffer = this.eventBuffer.filter(e => e.eventName !== eventName);
+      this.eventBuffer = this.eventBuffer.filter((e) => e.eventName !== eventName);
     }
   }
 
