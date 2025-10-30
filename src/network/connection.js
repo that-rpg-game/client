@@ -5,10 +5,10 @@ class ConnectionManager {
     this.socket = null;
     this.connected = false;
     this.handlers = new Map();
+    this.eventBuffer = []; // Buffer events until handlers are registered
   }
 
   connect(serverUrl, token) {
-    console.warn('Attempting to connect to:', serverUrl);
     return new Promise((resolve, reject) => {
       this.socket = io(serverUrl, {
         reconnection: true,
@@ -18,7 +18,6 @@ class ConnectionManager {
       });
 
       this.socket.on('connect', () => {
-        console.warn('Connected to game server');
         this.connected = true;
 
         // Send authentication after connection
@@ -26,12 +25,10 @@ class ConnectionManager {
       });
 
       this.socket.on('authSuccess', (data) => {
-        console.warn('Authentication successful', data);
         resolve(data);
       });
 
       this.socket.on('disconnect', () => {
-        console.warn('Disconnected from game server');
         this.connected = false;
       });
 
@@ -56,12 +53,25 @@ class ConnectionManager {
       const handler = this.handlers.get(eventName);
       if (handler) {
         handler(...args);
+      } else if (eventName.startsWith('player:')) {
+        // Buffer player events that arrive before handlers are registered
+        this.eventBuffer.push({ eventName, args });
       }
     });
   }
 
   on(eventName, handler) {
     this.handlers.set(eventName, handler);
+
+    // Process any buffered events for this handler
+    const bufferedEvents = this.eventBuffer.filter(e => e.eventName === eventName);
+    if (bufferedEvents.length > 0) {
+      bufferedEvents.forEach(event => {
+        handler(...event.args);
+      });
+      // Remove processed events from buffer
+      this.eventBuffer = this.eventBuffer.filter(e => e.eventName !== eventName);
+    }
   }
 
   off(eventName) {

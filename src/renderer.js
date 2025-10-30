@@ -393,7 +393,7 @@ class WorldScene extends Phaser.Scene {
 
   setupNetworkHandlers() {
     // Listen for player position updates
-    connection.on('playerMoved', (data) => {
+    connection.on('player:moved', (data) => {
       this.updatePlayerPosition(data);
     });
 
@@ -410,8 +410,8 @@ class WorldScene extends Phaser.Scene {
 
   spawnLocalPlayer(data) {
     // Convert server tile coordinates to pixel coordinates
-    const tileX = data.position?.x ?? 10;
-    const tileY = data.position?.y ?? 10;
+    const tileX = data.x ?? 10;
+    const tileY = data.y ?? 10;
     const x = tileX * this.tileSize;
     const y = tileY * this.tileSize;
 
@@ -436,8 +436,8 @@ class WorldScene extends Phaser.Scene {
   }
 
   spawnOtherPlayer(data) {
-    const tileX = data.position?.x ?? 0;
-    const tileY = data.position?.y ?? 0;
+    const tileX = data.x ?? 0;
+    const tileY = data.y ?? 0;
     const x = tileX * this.tileSize;
     const y = tileY * this.tileSize;
 
@@ -468,21 +468,39 @@ class WorldScene extends Phaser.Scene {
     const player = this.players.get(data.playerId);
 
     if (player) {
-      // Update other player position
-      player.x = pixelX;
-      player.y = pixelY;
+      // Update stored tile coordinates
       player.tileX = data.x;
       player.tileY = data.y;
-      player.nameText.x = pixelX;
-      player.nameText.y = pixelY - 30;
+
+      // Smoothly interpolate to new position
+      // Using 200ms for responsive feel
+      this.tweens.add({
+        targets: [player, player.nameText],
+        x: pixelX,
+        y: (target) => (target === player.nameText ? pixelY - 30 : pixelY),
+        duration: 200,
+        ease: 'Linear',
+        onComplete: () => {
+          // Ensure exact position after tween completes
+          player.x = pixelX;
+          player.y = pixelY;
+          player.nameText.x = pixelX;
+          player.nameText.y = pixelY - 30;
+        },
+      });
     } else if (this.localPlayer && this.localPlayer.playerId === data.playerId) {
-      // Update local player position
-      this.localPlayer.x = pixelX;
-      this.localPlayer.y = pixelY;
+      // Server correction for local player (desync fix)
       this.localPlayer.tileX = data.x;
       this.localPlayer.tileY = data.y;
-      this.localPlayer.nameText.x = pixelX;
-      this.localPlayer.nameText.y = pixelY - 30;
+
+      // Smoothly correct local player position if desynced
+      this.tweens.add({
+        targets: [this.localPlayer, this.localPlayer.nameText],
+        x: pixelX,
+        y: (target) => (target === this.localPlayer.nameText ? pixelY - 30 : pixelY),
+        duration: 200,
+        ease: 'Linear',
+      });
     }
   }
 
@@ -520,10 +538,53 @@ class WorldScene extends Phaser.Scene {
     if (direction && direction !== this.lastDirection) {
       connection.emit('move', { direction });
       this.lastDirection = direction;
+
+      // Optimistically update local player position immediately
+      this.moveLocalPlayer(direction);
     } else if (!direction) {
       // Reset when no keys are pressed
       this.lastDirection = null;
     }
+  }
+
+  moveLocalPlayer(direction) {
+    if (!this.localPlayer) return;
+
+    // Calculate new tile coordinates
+    let newTileX = this.localPlayer.tileX;
+    let newTileY = this.localPlayer.tileY;
+
+    switch (direction) {
+      case 'north':
+        newTileY += 1;
+        break;
+      case 'south':
+        newTileY -= 1;
+        break;
+      case 'east':
+        newTileX += 1;
+        break;
+      case 'west':
+        newTileX -= 1;
+        break;
+    }
+
+    // Update stored tile coordinates
+    this.localPlayer.tileX = newTileX;
+    this.localPlayer.tileY = newTileY;
+
+    // Convert to pixel coordinates
+    const pixelX = newTileX * this.tileSize;
+    const pixelY = newTileY * this.tileSize;
+
+    // Move sprite smoothly
+    this.tweens.add({
+      targets: [this.localPlayer, this.localPlayer.nameText],
+      x: pixelX,
+      y: pixelY,
+      duration: 200,
+      ease: 'Linear',
+    });
   }
 }
 

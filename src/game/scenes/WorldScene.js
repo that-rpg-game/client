@@ -8,6 +8,18 @@ class WorldScene extends Phaser.Scene {
     this.players = new Map();
     this.npcs = new Map();
     this.localPlayer = null;
+    this.TILE_SIZE = 32; // Size of each tile in pixels
+    this.MOVE_COOLDOWN = 200; // Minimum time between moves in milliseconds
+    this.lastMoveTime = 0; // Track last move time
+  }
+
+  // Helper methods to convert between world coordinates and pixel coordinates
+  worldToPixel(worldCoord) {
+    return worldCoord * this.TILE_SIZE;
+  }
+
+  pixelToWorld(pixelCoord) {
+    return Math.floor(pixelCoord / this.TILE_SIZE);
   }
 
   create() {
@@ -66,6 +78,12 @@ class WorldScene extends Phaser.Scene {
   }
 
   handleMovement() {
+    // Check cooldown
+    const now = Date.now();
+    if (now - this.lastMoveTime < this.MOVE_COOLDOWN) {
+      return; // Still on cooldown
+    }
+
     let direction = null;
 
     if (this.cursors.left.isDown) {
@@ -81,12 +99,66 @@ class WorldScene extends Phaser.Scene {
     if (direction) {
       // Send movement to server
       connection.emit('move', { direction });
+      this.lastMoveTime = now;
+
+      // Optimistically update local player position
+      this.updateLocalPlayerPosition(direction);
     }
   }
 
+  updateLocalPlayerPosition(direction) {
+    if (!this.localPlayer || !this.localPlayer.data) {
+      console.warn('Cannot update local player position - no local player');
+      return;
+    }
+
+    // Calculate new world coordinates based on direction
+    let newX = this.localPlayer.data.x;
+    let newY = this.localPlayer.data.y;
+    console.warn('Current local player position:', { x: newX, y: newY });
+
+    switch (direction) {
+      case 'north':
+        newY += 1;
+        break;
+      case 'south':
+        newY -= 1;
+        break;
+      case 'east':
+        newX += 1;
+        break;
+      case 'west':
+        newX -= 1;
+        break;
+    }
+
+    // Update stored data
+    this.localPlayer.data.x = newX;
+    this.localPlayer.data.y = newY;
+
+    // Convert to pixel coordinates and update sprite
+    const pixelX = this.worldToPixel(newX);
+    const pixelY = this.worldToPixel(newY);
+
+    console.warn('Moving local player to pixel position:', { pixelX, pixelY });
+
+    // Smooth movement
+    this.tweens.add({
+      targets: [this.localPlayer.sprite, this.localPlayer.nameText],
+      x: pixelX,
+      y: pixelY,
+      duration: 100,
+      ease: 'Linear',
+    });
+  }
+
   addPlayer(data) {
+    // Convert world coordinates to pixel coordinates
+    const pixelX = this.worldToPixel(data.x !== undefined ? data.x : 0);
+    const pixelY = this.worldToPixel(data.y !== undefined ? data.y : 0);
+
     // Create player sprite
-    const player = this.add.circle(data.x || 100, data.y || 100, 16, 0x00ff00);
+    const player = this.add.circle(pixelX, pixelY, 16, 0x00ff00);
     player.playerId = data.playerId;
 
     // Add name label
@@ -121,11 +193,15 @@ class WorldScene extends Phaser.Scene {
   updatePlayerPosition(data) {
     const player = this.players.get(data.playerId);
     if (player) {
+      // Convert world coordinates to pixel coordinates
+      const pixelX = this.worldToPixel(data.x);
+      const pixelY = this.worldToPixel(data.y);
+
       // Smooth movement
       this.tweens.add({
         targets: [player.sprite, player.nameText],
-        x: data.x,
-        y: data.y,
+        x: pixelX,
+        y: pixelY,
         duration: 100,
         ease: 'Linear',
       });
